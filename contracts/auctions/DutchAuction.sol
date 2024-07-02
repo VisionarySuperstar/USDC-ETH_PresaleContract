@@ -37,10 +37,12 @@ contract DutchAuction {
     }
 
     function getDutchAuctionPrice() public returns(uint256){
+        require(!finishedState, "ALready sold out");
         return initPrice - reducingRate * (block.timestamp - startTime) / 3600;
     }
 
     function buyDutchAuction() external{
+        require(!finishedState, "ALready sold out");
         uint256 currentPrice = getDutchAuctionPrice();
         uint256 marketFeeAmount = (currentPrice * marketFee) / 100;
         uint256 sellerAmount = currentPrice - marketFeeAmount;

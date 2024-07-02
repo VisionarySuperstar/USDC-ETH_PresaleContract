@@ -36,6 +36,7 @@ contract EnglishAuction {
     }
 
     function bidEnglishAuction(uint256 price) external{
+        require(!finishedState, "ALready sold out");
         require(price > currentPrice, "Lower price");
         SafeERC20.safeTransferFrom(IERC20(feeToken), msg.sender, address(this), price);
         if(currentPrice != initPrice) balance[winner] += currentPrice;
@@ -43,6 +44,7 @@ contract EnglishAuction {
     }
 
     function endEnglishAuction() external{
+        require(!finishedState, "ALready sold out");
         require(msg.sender == seller, "Only seller can call this function");
         uint256 marketFeeAmount = (currentPrice * marketFee) / 100;
         uint256 sellerAmount = currentPrice - marketFeeAmount;
@@ -50,6 +52,7 @@ contract EnglishAuction {
         SafeERC20.safeTransfer(IERC20(feeToken), seller, sellerAmount);
         IERC721(nftContract).transferFrom(seller, winner, tokenId);
         finishedState = true;
+        endTime = block.timestamp;
     }
 
     function withdraw() external{

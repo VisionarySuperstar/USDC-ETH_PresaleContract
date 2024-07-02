@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract Factory {
     // State variables
     address public owner; // Address of the contract owner
-    address implementCollection;
+    address public implementCollection;
 
         // Modifier to restrict access to only the contract owner
     modifier onlyOwner() {
