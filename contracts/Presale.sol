@@ -12,18 +12,26 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 uint256 constant INITIAL_TOKEN_PRICE = 14; //0.0014
 // address constant MAINNET_USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d; // USDC address in BSC
-address constant MAINNET_USDC = 0x16227D60f7a0e586C66B005219dfc887D13C9531; // USDC address in BSC Testnet
+// address constant MAINNET_USDC = 0x16227D60f7a0e586C66B005219dfc887D13C9531; // USDC address in BSC Testnet
+address constant MAINNET_USDC = 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8; // USDC address in Sepolia Testnet
+
 // address constant MAINNET_TOKEN = 0x5DFADeacc8239edBDa5598AEEd615d18F6825dE9; // Token Address in BSC
-address constant MAINNET_TOKEN = 0x69C9A6ccb9d07276e960eC7eD05e46ea815eD579; // Token Address in BSC Testnet
+// address constant MAINNET_TOKEN = 0x69C9A6ccb9d07276e960eC7eD05e46ea815eD579; // Token Address in BSC Testnet
+address constant MAINNET_TOKEN = 0x69C9A6ccb9d07276e960eC7eD05e46ea815eD579; // Token Address in Sepolia Testnet
 
 // mainnet router
 // address constant PANCAKESWAPV2_ROUTER_ADDRESS = address(
 //     0x10ED43C718714eb63d5aA57B78B54704E256024E 
 // );
 
-// testnet router
+// BSC testnet router
+// address constant PANCAKESWAPV2_ROUTER_ADDRESS = address(
+//     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 
+// );
+
+// Sepolia testnet router
 address constant PANCAKESWAPV2_ROUTER_ADDRESS = address(
-    0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 
+    0xB26B2De65D07eBB5E54C7F6282424D3be670E1f0
 );
 
 contract Presale is Ownable {

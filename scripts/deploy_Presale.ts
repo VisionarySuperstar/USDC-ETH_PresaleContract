@@ -10,7 +10,7 @@ async function main() {
     const instancePresale = await ethers.deployContract("Presale", [endTime]);
     await instancePresale.waitForDeployment()
     const Presale_Address = await instancePresale.getAddress();
-    console.log(`Presale is deployed. ${Presale_Address}`); //0x43c0f88cb16163Ba406464b94066Eb640fe34D79
+    console.log(`Presale is deployed. ${Presale_Address}`); //0x4159b6083be5bcc3d220cc9e7736D5dF83802E6c
 }
 
 // This pattern allows the use of async/await throughout and ensures that errors are caught and handled properly.
