@@ -21,12 +21,12 @@ address constant MAINNET_TOKEN = 0x5C2A60632BeaEb5aeF7F0D82088FC620BEC5b376; // 
 
 // mainnet router
 // address constant PANCAKESWAPV2_ROUTER_ADDRESS = address(
-//     0x10ED43C718714eb63d5aA57B78B54704E256024E 
+//     0x10ED43C718714eb63d5aA57B78B54704E256024E
 // );
 
 // BSC testnet router
 // address constant PANCAKESWAPV2_ROUTER_ADDRESS = address(
-//     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 
+//     0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3
 // );
 
 // Sepolia testnet router
@@ -36,11 +36,11 @@ address constant PANCAKESWAPV2_ROUTER_ADDRESS = address(
 
 contract Presale is Ownable {
     bool public presaleStarted;
-    uint public startTimeStamp;
-    uint public endTimeStamp;
-    uint256 public totalCap;
-    mapping (address => uint256) balanceOf;
-
+    uint public startTimeStamp; // presale start time
+    uint public endTimeStamp; // presale endtime
+    uint256 public fundsRaised; // funds raised by presale
+    uint256 public soldAmount;
+    mapping(address => uint256) balanceOf;
     IUniswapV2Router02 public router =
         IUniswapV2Router02(address(PANCAKESWAPV2_ROUTER_ADDRESS));
 
@@ -56,9 +56,13 @@ contract Presale is Ownable {
         );
         endTimeStamp = _endTimeStamp;
         startTimeStamp = _endTimeStamp;
-        totalCap = 0;
+        fundsRaised = 0;
         presaleStarted = false;
     }
+
+    /**
+     * @dev extend presale period
+     */
     function updateEndTimeStamp(uint256 _endTimeStamp) public onlyOwner {
         require(
             block.timestamp < _endTimeStamp,
@@ -67,13 +71,20 @@ contract Presale is Ownable {
         endTimeStamp = _endTimeStamp;
     }
 
+    /**
+     * @dev get current token price for presale
+     * @return uint256
+     */
     function getCurrentTokenPrice() public view returns (uint256) {
-        uint256 currentStep = totalCap / (500 * 10 ** (3 + 18));
+        uint256 currentStep = soldAmount / (5 * 10 ** (6 + 18));
         uint256 tokenPrice = INITIAL_TOKEN_PRICE + currentStep * 20;
         return tokenPrice;
     }
-    
-    function startPresale (uint256 _endTimeStamp) public onlyOwner {
+
+    /**
+     * @dev start the presale
+     */
+    function startPresale(uint256 _endTimeStamp) public onlyOwner {
         require(
             block.timestamp < _endTimeStamp,
             "Update endtime in the future"
@@ -83,32 +94,42 @@ contract Presale is Ownable {
         endTimeStamp = _endTimeStamp;
         presaleStarted = true;
     }
-    function calculateRemainingTime() public view returns(uint256) {
-        require(block.timestamp < endTimeStamp, "Presale is ended");
 
+    /**
+     * @dev calculate remaining time for presale
+     * @return uint256
+     */
+    function calculateRemainingTime() public view returns (uint256) {
+        require(block.timestamp < endTimeStamp, "Presale is ended");
         return (endTimeStamp - block.timestamp);
     }
 
-    function buyTokenWithUSDC(uint256 _usdcAmount) public {
-        if(block.timestamp >= endTimeStamp) presaleStarted = false;
-
+    /**
+     * @dev purchase mars token using USDC
+     */
+    function buyTokenWithUSDC(uint256 _usdcAmount) external {
+        if (block.timestamp >= endTimeStamp) presaleStarted = false;
         require(block.timestamp > startTimeStamp, "Presale is not started");
         require(presaleStarted == true, "Presale is ended");
         require(0 < _usdcAmount, "Unavailable amount of token to buy");
 
         uint256 currentTokenPrice = getCurrentTokenPrice();
-        uint256 tokenAmount = (_usdcAmount * 10 ** 4) / currentTokenPrice;
+        uint256 _tokenAmount = (_usdcAmount * 10 ** 4) / currentTokenPrice;
 
-        totalCap = totalCap + _usdcAmount;
+        fundsRaised = fundsRaised + _usdcAmount;
         usdc.transferFrom(msg.sender, address(this), _usdcAmount);
-        balanceOf[msg.sender] += tokenAmount;
+        balanceOf[msg.sender] += _tokenAmount;
+        soldAmount += _tokenAmount;
     }
-    function buyTokenWithBNB() public payable {
-        if(block.timestamp >= endTimeStamp) presaleStarted = false;
-        
+
+    /**
+     * @dev purchase mars token using ETH
+     */
+    function buyTokenWithETH() external payable {
+        if (block.timestamp >= endTimeStamp) presaleStarted = false;
         require(block.timestamp > startTimeStamp, "Presale is not started");
         require(presaleStarted == true, "Presale is ended");
-        require(0 < msg.value, "Unavailable amount of token to buy");
+        require(msg.value > 0, "Unavailable amount of token to buy");
 
         address WETH = router.WETH();
         address[] memory path = new address[](2);
@@ -118,17 +139,114 @@ contract Presale is Ownable {
             value: msg.value
         }(0, path, address(this), block.timestamp + 15 minutes);
         uint256 usdAmount = amounts[1];
-        
+
         uint256 currentTokenPrice = getCurrentTokenPrice();
         uint256 tokenAmount = (usdAmount * 10 ** 4) / currentTokenPrice;
-        totalCap += usdAmount;
+        fundsRaised += usdAmount;
         balanceOf[msg.sender] += tokenAmount;
+        soldAmount += tokenAmount;
     }
 
+    /**
+     * @dev get hardcap for presale
+     * @return
+     */
+    function getHardcap() public view returns (uint256) {
+        uint256 _hardcap = 0;
+        for (uint256 i = 0; i < 20; i++) {
+            _hardcap +=
+                ((INITIAL_TOKEN_PRICE + i * 20) * (5 * 10 ** (18 + 6))) / (10 ** 4);
+        }
+        return _hardcap;
+    }
+
+    /**
+     * @dev get total token amount for presale
+     * @return
+     */
+    function sale() public view returns (uint256) {
+        return token.balanceOf(address(this));
+    }
+
+    /**
+     * @dev get mars balance for address
+     * @return
+     */
+    function marsBalance(address _account) external view returns (uint256) {
+        return token.balanceOf(_account);
+    }
+
+    /**
+     * @dev get usdc balance for address
+     * @return
+     */
+    function usdcBalance(address _account) external view returns (uint256) {
+        return usdc.balanceOf(_account);
+    }
+
+    /**
+     * @dev get current step index
+     * @return uint256
+     */
+    function getCurrentStep() external view returns (uint256) {
+        return soldAmount / (5 * 10 ** (6 + 18));
+    }
+
+    /**
+     * @dev get purchase available mars token amount by ETH
+     * @param _amount Eth amount
+     * @return
+     */
+    function buyEstimationWithEth(
+        uint256 _amount
+    ) public view returns (uint256) {
+        uint256 currentTokenPrice = getCurrentTokenPrice();
+        address WETH = router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = WETH;
+        path[1] = MAINNET_USDC;
+        uint256[] memory _usdcAmount = router.getAmountsOut(_amount, path);
+        uint256 tokenAmount = (_usdcAmount[1] * 10 ** 4) / currentTokenPrice;
+        return tokenAmount;
+    }
+
+    /**
+     * @dev get purchase available mars token amount by USDC
+     * @param _amount usdc amount
+     * @return
+     */
+    function buyEstimationWithUsdc(
+        uint256 _amount
+    ) public view returns (uint256) {
+        uint256 currentTokenPrice = getCurrentTokenPrice();
+        return (_amount * 10 ** 4) / currentTokenPrice;    
+    }
+
+    function estimateWithToken(
+        uint256 _amount
+    ) public view returns(uint256[] memory){
+        uint256 currentTokenPrice = getCurrentTokenPrice();
+        uint256[] memory outAmounts = new uint256[](2);
+        outAmounts[0] = _amount * currentTokenPrice / (10 ** 4);
+        address WETH = router.WETH();
+        address[] memory path = new address[](2);
+        path[1] = WETH;
+        path[0] = MAINNET_USDC;
+        uint256[] memory _ethAmount = router.getAmountsOut(_amount, path);
+        outAmounts[1] = _ethAmount[1];
+        return outAmounts;
+    }
+
+    /**
+     * @dev withdraw fundsRaised to dev wallet
+     */
     function withdraw(address _to) public payable onlyOwner {
         usdc.transfer(_to, usdc.balanceOf(address(this)));
     }
 
+    /**
+     * @dev claim mars tokens after presale is finished
+     */
     function claim() external {
         require(block.timestamp > endTimeStamp, "presale did not finished");
         require(balanceOf[msg.sender] > 0, "No balane to claim");
