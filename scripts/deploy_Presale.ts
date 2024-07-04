@@ -5,9 +5,7 @@ import { ethers } from 'hardhat'
 async function main() {
     // Retrieve the first signer, typically the default account in Hardhat, to use as the deployer.
     const [deployer] = await ethers.getSigners();
-    const endTime = Math.floor(Date.now() / 1000) + 10000;
-    console.log("endTime", endTime);
-    const instancePresale = await ethers.deployContract("Presale", [endTime]);
+    const instancePresale = await ethers.deployContract("Presale");
     await instancePresale.waitForDeployment()
     const Presale_Address = await instancePresale.getAddress();
     console.log(`Presale is deployed. ${Presale_Address}`); //
