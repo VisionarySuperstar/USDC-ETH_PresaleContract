@@ -39,9 +39,7 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: 
-      "1UME8V5UP4AZHYDF7RWC78GTIXXRPJHTQY"
-    
+    apiKey: "ED2NED96C214Y891MR98PZZ1Q45VTFYZRV",
   },
   gasReporter: {
     enabled: true,
