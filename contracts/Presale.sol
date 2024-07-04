@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
-uint256 constant INITIAL_TOKEN_PRICE = 14; //0.0014
+
 // address constant MAINNET_USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d; // USDC address in BSC
 // address constant MAINNET_USDC = 0x16227D60f7a0e586C66B005219dfc887D13C9531; // USDC address in BSC Testnet
 address constant MAINNET_USDC = 0xA1f5aE420cCAAadA3ddF121afA72E22483b538B9; // USDC address in Sepolia Testnet
@@ -40,6 +40,8 @@ contract Presale is Ownable {
     uint public endTimeStamp; // presale endtime
     uint256 public fundsRaised; // funds raised by presale
     uint256 public soldAmount;
+    uint256 public presaleAmount = 10 ** (8 + 18);
+    uint256 public INITIAL_TOKEN_PRICE = 14; //0.000014
     mapping(address => uint256) balanceOf;
     IUniswapV2Router02 public router =
         IUniswapV2Router02(address(PANCAKESWAPV2_ROUTER_ADDRESS));
@@ -49,13 +51,7 @@ contract Presale is Ownable {
 
     receive() external payable {}
 
-    constructor(uint _endTimeStamp) Ownable(msg.sender) {
-        require(
-            block.timestamp < _endTimeStamp,
-            "Presale end time should be in the future"
-        );
-        endTimeStamp = _endTimeStamp;
-        startTimeStamp = _endTimeStamp;
+    constructor() Ownable(msg.sender) {
         fundsRaised = 0;
         presaleStarted = false;
     }
@@ -81,6 +77,10 @@ contract Presale is Ownable {
         return tokenPrice;
     }
 
+    function setInitialTokenPrice(uint256 _initialTokenPrice) public onlyOwner {
+        INITIAL_TOKEN_PRICE = _initialTokenPrice;
+    }
+
     /**
      * @dev start the presale
      */
@@ -89,7 +89,14 @@ contract Presale is Ownable {
             block.timestamp < _endTimeStamp,
             "Update endtime in the future"
         );
-
+        require(
+            token.balanceOf(address(this)) >= presaleAmount,
+            "Token not charged fully"
+        );
+        require(
+            presaleStarted == false,
+            "Already started"
+        );
         startTimeStamp = block.timestamp;
         endTimeStamp = _endTimeStamp;
         presaleStarted = true;
@@ -114,7 +121,7 @@ contract Presale is Ownable {
         require(0 < _usdcAmount, "Unavailable amount of token to buy");
 
         uint256 currentTokenPrice = getCurrentTokenPrice();
-        uint256 _tokenAmount = (_usdcAmount * 10 ** 4) / currentTokenPrice;
+        uint256 _tokenAmount = (_usdcAmount * 10 ** 6) / currentTokenPrice;
 
         fundsRaised = fundsRaised + _usdcAmount;
         usdc.transferFrom(msg.sender, address(this), _usdcAmount);
@@ -141,7 +148,7 @@ contract Presale is Ownable {
         uint256 usdAmount = amounts[1];
 
         uint256 currentTokenPrice = getCurrentTokenPrice();
-        uint256 tokenAmount = (usdAmount * 10 ** 4) / currentTokenPrice;
+        uint256 tokenAmount = (usdAmount * 10 ** 6) / currentTokenPrice;
         fundsRaised += usdAmount;
         balanceOf[msg.sender] += tokenAmount;
         soldAmount += tokenAmount;
@@ -155,7 +162,7 @@ contract Presale is Ownable {
         uint256 _hardcap = 0;
         for (uint256 i = 0; i < 20; i++) {
             _hardcap +=
-                ((INITIAL_TOKEN_PRICE + i * 20) * (5 * 10 ** (18 + 6))) / (10 ** 4);
+                ((INITIAL_TOKEN_PRICE + i * 20) * (5 * 10 ** 6)) / (10 ** 6);
         }
         return _hardcap;
     }
@@ -206,7 +213,7 @@ contract Presale is Ownable {
         path[0] = WETH;
         path[1] = MAINNET_USDC;
         uint256[] memory _usdcAmount = router.getAmountsOut(_amount, path);
-        uint256 tokenAmount = (_usdcAmount[1] * 10 ** 4) / currentTokenPrice;
+        uint256 tokenAmount = (_usdcAmount[1] * 10 ** 6) / currentTokenPrice;
         return tokenAmount;
     }
 
@@ -219,7 +226,7 @@ contract Presale is Ownable {
         uint256 _amount
     ) public view returns (uint256) {
         uint256 currentTokenPrice = getCurrentTokenPrice();
-        return (_amount * 10 ** 4) / currentTokenPrice;    
+        return (_amount * 10 ** 6) / currentTokenPrice;    
     }
 
     function estimateWithToken(
@@ -227,7 +234,7 @@ contract Presale is Ownable {
     ) public view returns(uint256[] memory){
         uint256 currentTokenPrice = getCurrentTokenPrice();
         uint256[] memory outAmounts = new uint256[](2);
-        outAmounts[0] = _amount * currentTokenPrice / (10 ** 4);
+        outAmounts[0] = _amount * currentTokenPrice / (10 ** 6);
         address WETH = router.WETH();
         address[] memory path = new address[](2);
         path[1] = WETH;
@@ -254,4 +261,8 @@ contract Presale is Ownable {
         balanceOf[msg.sender] = 0;
         token.transfer(msg.sender, amount);
     }
+    function transferOwnership(address newOwner) public virtual override onlyOwner {
+        super.transferOwnership(newOwner);
+    }
+
 }
