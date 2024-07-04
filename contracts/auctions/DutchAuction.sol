@@ -17,7 +17,7 @@ contract DutchAuction {
     uint256 public endTime;
     address public feeToken;
     address public marketplace;
-    address public winner;
+    address public buyer;
     uint256 public marketFee;
     constructor(address _seller, address _nftContract, uint256 _tokenId, uint256 _initPrice,
         uint256 _period, uint256 _reducingRate, address _feeToken, uint256 _marketFee){
@@ -36,9 +36,9 @@ contract DutchAuction {
         require((reducingRate * period / 3600) < initPrice, "Invalid auction infor");
     }
 
-    function getDutchAuctionPrice() public returns(uint256){
+    function getDutchAuctionPrice() public view returns(uint256){
         require(!finishedState, "ALready sold out");
-        return initPrice - reducingRate * (block.timestamp - startTime) / 3600;
+        return initPrice - reducingRate * ((block.timestamp - startTime) / 3600);
     }
 
     function buyDutchAuction() external{
@@ -51,5 +51,6 @@ contract DutchAuction {
         IERC721(nftContract).transferFrom(seller, msg.sender, tokenId);
         endTime = block.timestamp;
         finishedState = true;
+        buyer = msg.sender;
     }
 }

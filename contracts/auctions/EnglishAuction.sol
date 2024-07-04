@@ -41,6 +41,7 @@ contract EnglishAuction {
         SafeERC20.safeTransferFrom(IERC20(feeToken), msg.sender, address(this), price);
         if(currentPrice != initPrice) balance[winner] += currentPrice;
         winner = msg.sender;
+        currentPrice = price;
     }
 
     function endEnglishAuction() external{
